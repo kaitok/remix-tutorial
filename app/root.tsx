@@ -11,16 +11,18 @@ import {
   ScrollRestoration,
   useLoaderData,
   useNavigation,
+  useSubmit,
 } from '@remix-run/react'
 import { createEmptyContact, getContacts } from './data'
 import type { LinksFunction, LoaderFunctionArgs } from '@remix-run/node'
+import { useEffect, useState } from 'react'
 import appStylesHref from './app.css'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url)
   const q = url.searchParams.get('q')
   const contacts = await getContacts(q)
-  return json({ contacts })
+  return json({ contacts, q })
 }
 
 export const action = async () => {
@@ -33,8 +35,16 @@ export const links: LinksFunction = () => [
 ]
 
 export default function App() {
-  const { contacts } = useLoaderData<typeof loader>()
+  const { contacts, q } = useLoaderData<typeof loader>()
   const navigation = useNavigation()
+  const sumbit = useSubmit()
+
+  const [query, setQuery] = useState(q || '')
+
+  useEffect(() => {
+    setQuery(q || '')
+  }, [q])
+
   return (
     <html lang="en">
       <head>
@@ -47,13 +57,19 @@ export default function App() {
         <div id="sidebar">
           <h1>Remix Contacts</h1>
           <div>
-            <Form id="search-form" role="search">
+            <Form
+              id="search-form"
+              onChange={(event) => sumbit(event.currentTarget)}
+              role="search"
+            >
               <input
                 id="q"
                 aria-label="Search contacts"
+                onChange={(event) => setQuery(event.currentTarget.value)}
                 placeholder="Search"
                 type="search"
                 name="q"
+                value={query}
               />
               <div id="search-spinner" aria-hidden hidden={true} />
             </Form>
